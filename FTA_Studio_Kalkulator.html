@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FTA Studio — Fault Tree Analysis</title>
+<style>
+:root{
+ --bg:#f3f8fd;--paper:#fff;--ink:#20354a;--muted:#647b91;--line:#d8e5f0;
+ --blue:#2878c8;--blue2:#e8f3ff;--cyan:#dff7fb;--teal:#168b91;
+ --orange:#f3a33b;--orange2:#fff4e4;--red:#d95d59;--red2:#fff0ef;
+ --green:#23845d;--green2:#eaf8f0;--shadow:0 8px 24px rgba(37,78,115,.07)
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#edf6ff 0,#f7fafd 260px);color:var(--ink);font:15px/1.5 Arial,Helvetica,sans-serif}
+header{padding:28px 18px 22px;border-bottom:1px solid #d9e9f7;background:linear-gradient(115deg,#e2f1ff,#e8fbfa)}
+.wrap{max-width:1180px;margin:auto;padding:0 16px}
+.eyebrow{font-size:11px;letter-spacing:1.5px;font-weight:800;color:#3675a9;text-transform:uppercase}
+h1{font-size:clamp(25px,4vw,35px);line-height:1.15;margin:7px 0;color:#194d78}
+header p{margin:0;color:#547087;max-width:760px}
+main{padding:22px 0 42px}
+.layout{display:grid;grid-template-columns:360px minmax(0,1fr);gap:18px;align-items:start}
+.panel,.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.panel{padding:19px;position:sticky;top:14px}
+.card{padding:19px}
+h2{font-size:18px;margin:0 0 13px;color:#205b8c}
+h3{font-size:14px;margin:16px 0 8px;color:#3e607c}
+.field{margin-bottom:12px}
+label{display:block;font-weight:700;font-size:12px;color:#425d75;margin-bottom:5px}
+input,select{width:100%;border:1px solid #cbdce9;background:#fbfdff;border-radius:9px;padding:10px 11px;color:var(--ink);font:14px Arial}
+input:focus,select:focus{outline:2px solid #b9ddfa;border-color:var(--blue)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.event{padding:11px;border:1px solid #e0eaf2;border-radius:11px;background:#fbfdff;margin:9px 0}
+.event-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.event-head b{font-size:13px}
+.tag{font-size:10px;font-weight:800;padding:3px 7px;border-radius:20px;background:var(--blue2);color:#27669d}
+button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;font-size:13px;cursor:pointer;transition:.15s}
+button:hover{filter:brightness(.97);transform:translateY(-1px)}
+.primary{background:var(--blue);color:#fff;width:100%}
+.ghost{background:#eaf2f9;color:#315978}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
+.actions button{flex:1}
+.right{display:grid;gap:18px}
+.tree-card{overflow:hidden}
+.tree-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tree-top p{font-size:12px;color:var(--muted);margin:3px 0 0}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#60768b}
+.dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px}
+.diagram-wrap{overflow-x:auto;padding:12px 0 0}
+svg{display:block;width:100%;min-width:560px;height:auto}
+.connector{stroke:#8aa8c1;stroke-width:2.2;fill:none}
+.gate{fill:#fff2dc;stroke:#e3a13c;stroke-width:2}
+.topbox{fill:#fff0ef;stroke:#dc7771;stroke-width:2}
+.eventbox{fill:#e9f5ff;stroke:#6da9dc;stroke-width:1.7}
+.svg-title{font:700 13px Arial;fill:#29445d}
+.svg-small{font:11px Arial;fill:#60768b}
+.gate-label{font:700 11px Arial;fill:#9a641c}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.metric{border-radius:12px;padding:14px;border:1px solid #d6e9f8;background:var(--blue2)}
+.metric:nth-child(2){background:var(--orange2);border-color:#f3dfbf}
+.metric:nth-child(3){background:var(--green2);border-color:#cfe9da}
+.metric small{display:block;font-weight:700;color:#59738a;font-size:11px;margin-bottom:5px}
+.metric strong{font-size:clamp(17px,2vw,23px);color:#194d78;overflow-wrap:anywhere}
+.metric:nth-child(2) strong{color:#9a641c}.metric:nth-child(3) strong{color:#216d4c}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:10px;border-bottom:1px solid #e4edf4;text-align:left}
+th{background:#f0f6fb;color:#45647f;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+td:last-child,th:last-child{text-align:right}
+.cut{display:inline-block;background:#eaf4ff;color:#245f91;padding:5px 9px;border-radius:7px;margin:3px;font-weight:700;font-size:12px}
+.note{padding:12px 14px;border-radius:10px;background:var(--orange2);border:1px solid #f0d9b7;color:#805820;font-size:12px}
+.status{padding:11px 13px;border-radius:10px;background:var(--green2);border:1px solid #cce8d8;color:#286a4b;font-size:12px}
+.status.error{background:var(--red2);border-color:#f1cfcd;color:#9a3f3b}
+.formula{font-family:Georgia,serif;background:#f6f9fc;border:1px solid #e1eaf2;border-radius:9px;padding:10px 12px;font-size:14px;color:#3b5871;overflow-wrap:anywhere}
+footer{font-size:11px;color:#71869a;margin-top:18px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.panel{position:static}.metrics{grid-template-columns:1fr 1fr}.metric:last-child{grid-column:1/-1}}
+@media(max-width:520px){.two{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.metric:last-child{grid-column:auto}.card,.panel{padding:15px}}
+@media print{body{background:#fff}.panel button,.actions{display:none}.panel{position:static}.layout{grid-template-columns:1fr}.panel,.card{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+ <div class="eyebrow">Safety & Reliability Engineering · Interactive Tool</div>
+ <h1>FTA Studio</h1>
+ <p>Kalkulator Fault Tree Analysis untuk memodelkan kombinasi kegagalan, menghitung probabilitas Top Event, dan mengidentifikasi minimal cut sets.</p>
+</div></header>
+<main class="wrap">
+<div class="layout">
+<aside class="panel">
+ <h2>Konfigurasi model</h2>
+ <div class="field"><label for="topName">Top Event (kejadian puncak)</label><input id="topName" value="Cedera operator akibat hydraulic press"></div>
+ <div class="field"><label for="rootGate">Gerbang logika Top Event</label><select id="rootGate"><option value="OR">OR — salah satu cabang terjadi</option><option value="AND">AND — kedua cabang terjadi</option></select></div>
+ <h3>Cabang A — Intermediate Event A</h3>
+ <div class="field"><label for="aName">Nama kejadian antara</label><input id="aName" value="Kegagalan sistem deteksi"></div>
+ <div class="field"><label for="aGate">Gerbang logika</label><select id="aGate"><option value="OR">OR</option><option value="AND">AND</option></select></div>
+ <div class="event">
+  <div class="event-head"><b>Basic Event A1</b><span class="tag">INPUT</span></div>
+  <div class="field"><label for="a1Name">Nama kegagalan</label><input id="a1Name" value="Light curtain gagal"></div>
+  <div class="field"><label for="a1P">Probabilitas kegagalan (0–1)</label><input id="a1P" type="number" min="0" max="1" step="any" value="0.02"></div>
+ </div>
+ <div class="event">
+  <div class="event-head"><b>Basic Event A2</b><span class="tag">INPUT</span></div>
+  <div class="field"><label for="a2Name">Nama kegagalan</label><input id="a2Name" value="Sensor posisi gagal"></div>
+  <div class="field"><label for="a2P">Probabilitas kegagalan (0–1)</label><input id="a2P" type="number" min="0" max="1" step="any" value="0.03"></div>
+ </div>
+ <h3>Cabang B — Intermediate Event B</h3>
+ <div class="field"><label for="bName">Nama kejadian antara</label><input id="bName" value="Kegagalan penghentian mesin"></div>
+ <div class="field"><label for="bGate">Gerbang logika</label><select id="bGate"><option value="AND">AND</option><option value="OR">OR</option></select></div>
+ <div class="event">
+  <div class="event-head"><b>Basic Event B1</b><span class="tag">INPUT</span></div>
+  <div class="field"><label for="b1Name">Nama kegagalan</label><input id="b1Name" value="Safety interlock gagal"></div>
+  <div class="field"><label for="b1P">Probabilitas kegagalan (0–1)</label><input id="b1P" type="number" min="0" max="1" step="any" value="0.01"></div>
+ </div>
+ <div class="event">
+  <div class="event-head"><b>Basic Event B2</b><span class="tag">INPUT</span></div>
+  <div class="field"><label for="b2Name">Nama kegagalan</label><input id="b2Name" value="Respons operator gagal"></div>
+  <div class="field"><label for="b2P">Probabilitas kegagalan (0–1)</label><input id="b2P" type="number" min="0" max="1" step="any" value="0.20"></div>
+ </div>
+ <div class="actions">
+  <button class="primary" onclick="calculate()">Hitung FTA</button>
+  <button class="ghost" onclick="resetModel()">Reset contoh</button>
+ </div>
+ <div class="actions"><button class="ghost" onclick="window.print()">Cetak / Simpan PDF</button></div>
+</aside>
+
+<section class="right">
+ <div class="card tree-card">
+  <div class="tree-top">
+   <div><h2>Visualisasi Fault Tree</h2><p>Diagram diperbarui otomatis mengikuti nama dan gerbang logika.</p></div>
+   <div class="legend"><span><i class="dot" style="background:#f4b34e"></i>Logic gate</span><span><i class="dot" style="background:#7db6e8"></i>Basic event</span><span><i class="dot" style="background:#e58a84"></i>Top event</span></div>
+  </div>
+  <div class="diagram-wrap">
+  <svg viewBox="0 0 820 440" role="img" aria-label="Diagram Fault Tree">
+   <path class="connector" d="M410 76 V112 M205 174 V205 M615 174 V205 M205 265 V292 M615 265 V292 M205 292 V318 M615 292 V318"/>
+   <path class="connector" d="M410 112 H205 V132 M410 112 H615 V132"/>
+   <path class="connector" d="M205 265 H105 V318 M205 265 H305 V318 M615 265 H515 V318 M615 265 H715 V318"/>
+   <rect class="topbox" x="270" y="18" width="280" height="58" rx="12"/>
+   <text id="svgTop" class="svg-title" x="410" y="42" text-anchor="middle">Cedera operator akibat hydraulic press</text>
+   <text class="svg-small" x="410" y="60" text-anchor="middle">TOP EVENT</text>
+   <path class="gate" d="M378 112 H442 L432 174 H388 Z"/>
+   <text id="svgRoot" class="gate-label" x="410" y="143" text-anchor="middle">OR</text>
+   <path class="gate" d="M173 205 H237 L227 265 H183 Z"/>
+   <text id="svgAGate" class="gate-label" x="205" y="237" text-anchor="middle">OR</text>
+   <path class="gate" d="M583 205 H647 L637 265 H593 Z"/>
+   <text id="svgBGate" class="gate-label" x="615" y="237" text-anchor="middle">AND</text>
+   <rect class="eventbox" x="95" y="318" width="180" height="66" rx="9"/>
+   <rect class="eventbox" x="305" y="318" width="180" height="66" rx="9"/>
+   <rect class="eventbox" x="515" y="318" width="180" height="66" rx="9"/>
+   <rect class="eventbox" x="625" y="318" width="180" height="66" rx="9"/>
+   <text id="svgA1" class="svg-title" x="185" y="345" text-anchor="middle">Light curtain gagal</text><text id="svgA1P" class="svg-small" x="185" y="366" text-anchor="middle">P = 0,0200</text>
+   <text id="svgA2" class="svg-title" x="395" y="345" text-anchor="middle">Sensor posisi gagal</text><text id="svgA2P" class="svg-small" x="395" y="366" text-anchor="middle">P = 0,0300</text>
+   <text id="svgB1" class="svg-title" x="605" y="345" text-anchor="middle">Safety interlock gagal</text><text id="svgB1P" class="svg-small" x="605" y="366" text-anchor="middle">P = 0,0100</text>
+   <text id="svgB2" class="svg-title" x="715" y="345" text-anchor="middle">Respons operator gagal</text><text id="svgB2P" class="svg-small" x="715" y="366" text-anchor="middle">P = 0,2000</text>
+   <text id="svgAName" class="svg-small" x="205" y="192" text-anchor="middle">Intermediate Event A</text>
+   <text id="svgBName" class="svg-small" x="615" y="192" text-anchor="middle">Intermediate Event B</text>
+  </svg>
+  </div>
+ </div>
+ <div class="card">
+  <h2>Hasil perhitungan</h2>
+  <div class="metrics">
+   <div class="metric"><small>Probabilitas Top Event</small><strong id="topProb">—</strong></div>
+   <div class="metric"><small>Probabilitas dalam persen</small><strong id="topPct">—</strong></div>
+   <div class="metric"><small>Kategori hasil model</small><strong id="level">—</strong></div>
+  </div>
+  <h3>Rincian probabilitas setiap kejadian</h3>
+  <div class="table-wrap"><table><thead><tr><th>Kejadian</th><th>Gerbang</th><th>Probabilitas</th></tr></thead><tbody>
+   <tr><td id="rowA">Intermediate Event A</td><td id="rowAG">OR</td><td id="rowAP">—</td></tr>
+   <tr><td id="rowB">Intermediate Event B</td><td id="rowBG">AND</td><td id="rowBP">—</td></tr>
+   <tr><td id="rowT">Top Event</td><td id="rowTG">OR</td><td id="rowTP">—</td></tr>
+  </tbody></table></div>
+  <h3>Minimal Cut Sets (MCS)</h3>
+  <div id="cutsets">—</div>
+  <h3>Formulasi Boolean dan probabilitas</h3>
+  <div id="formula" class="formula">—</div>
+ </div>
+ <div class="note"><b>Asumsi penting:</b> perhitungan kuantitatif menggunakan asumsi basic events saling independen. Untuk gerbang OR digunakan P = 1 − ∏(1 − Pᵢ), sedangkan gerbang AND menggunakan P = ∏Pᵢ. Jika terdapat ketergantungan atau common-cause failure, hasil ini tidak dapat langsung digunakan tanpa pemodelan lanjutan.</div>
+ <div id="status" class="status" aria-live="polite">Siap menghitung model.</div>
+ <footer>FTA Studio · Alat bantu pembelajaran dan analisis awal K3/reliabilitas. Nilai probabilitas harus berasal dari data historis, data uji, atau estimasi ahli yang terdokumentasi.</footer>
+</section>
+</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const ids=['topName','rootGate','aName','aGate','a1Name','a1P','a2Name','a2P','bName','bGate','b1Name','b1P','b2Name','b2P'];
+const names=()=>({top:$('topName').value,a:$('aName').value,a1:$('a1Name').value,a2:$('a2Name').value,b:$('bName').value,b1:$('b1Name').value,b2:$('b2Name').value});
+const probs=()=>({a1:Number($('a1P').value),a2:Number($('a2P').value),b1:Number($('b1P').value),b2:Number($('b2P').value)});
+function gateProb(g,ps){return g==='AND'?ps.reduce((x,y)=>x*y,1):1-ps.reduce((x,y)=>x*(1-y),1)}
+function fmt(x){return Number(x).toExponential(5)}
+function pct(x){return (x*100).toLocaleString('id-ID',{maximumFractionDigits:6})+'%'}
+function gateSets(g,left,right){
+ if(g==='OR') return [...left,...right];
+ const out=[];left.forEach(a=>right.forEach(b=>out.push([...a,...b])));return out;
+}
+function calculate(){
+ const n=names(),p=probs(),ag=$('aGate').value,bg=$('bGate').value,rg=$('rootGate').value;
+ if(Object.values(p).some(x=>!Number.isFinite(x)||x<0||x>1)){
+  $('status').className='status error';$('status').textContent='Input probabilitas tidak valid. Semua probabilitas basic event harus berada pada rentang 0 sampai 1.';return;
+ }
+ const pa=gateProb(ag,[p.a1,p.a2]),pb=gateProb(bg,[p.b1,p.b2]),pt=gateProb(rg,[pa,pb]);
+ $('svgTop').textContent=n.top.length>43?n.top.slice(0,40)+'…':n.top;
+ $('svgRoot').textContent=rg;$('svgAGate').textContent=ag;$('svgBGate').textContent=bg;
+ $('svgAName').textContent=n.a.length>26?n.a.slice(0,23)+'…':n.a;
+ $('svgBName').textContent=n.b.length>26?n.b.slice(0,23)+'…':n.b;
+ const svgMap=[['svgA1',n.a1],['svgA2',n.a2],['svgB1',n.b1],['svgB2',n.b2]];
+ svgMap.forEach(([id,v])=>$(id).textContent=v.length>25?v.slice(0,22)+'…':v);
+ [['svgA1P',p.a1],['svgA2P',p.a2],['svgB1P',p.b1],['svgB2P',p.b2]].forEach(([id,v])=>$(id).textContent='P = '+v.toFixed(5));
+ $('topProb').textContent=fmt(pt);$('topPct').textContent=pct(pt);
+ $('level').textContent=pt<.001?'Sangat rendah':pt<.01?'Rendah':pt<.1?'Sedang':'Tinggi';
+ $('rowA').textContent=n.a;$('rowB').textContent=n.b;$('rowT').textContent=n.top;
+ $('rowAG').textContent=ag;$('rowBG').textContent=bg;$('rowTG').textContent=rg;
+ $('rowAP').textContent=fmt(pa);$('rowBP').textContent=fmt(pb);$('rowTP').textContent=fmt(pt);
+ const setsA=gateSets(ag,[[n.a1]],[[n.a2]]),setsB=gateSets(bg,[[n.b1]],[[n.b2]]);
+ const mcs=gateSets(rg,setsA,setsB);
+ $('cutsets').innerHTML=mcs.map(s=>'<span class="cut">'+s.join(' + ')+'</span>').join('');
+ const fA=ag==='AND'?`P(A) = P(A1) × P(A2) = ${p.a1} × ${p.a2} = ${fmt(pa)}`:`P(A) = 1 − (1 − P(A1))(1 − P(A2)) = ${fmt(pa)}`;
+ const fB=bg==='AND'?`P(B) = P(B1) × P(B2) = ${p.b1} × ${p.b2} = ${fmt(pb)}`:`P(B) = 1 − (1 − P(B1))(1 − P(B2)) = ${fmt(pb)}`;
+ const fT=rg==='AND'?`P(Top) = P(A) × P(B) = ${fmt(pa)} × ${fmt(pb)} = ${fmt(pt)}`:`P(Top) = 1 − (1 − P(A))(1 − P(B)) = ${fmt(pt)}`;
+ $('formula').innerHTML=`<b>Struktur Boolean:</b> Top = ${rg==='AND'?'A ∧ B':'A ∨ B'}; A = ${ag==='AND'?'A1 ∧ A2':'A1 ∨ A2'}; B = ${bg==='AND'?'B1 ∧ B2':'B1 ∨ B2'}<br><br>${fA}<br>${fB}<br><b>${fT}</b>`;
+ $('status').className='status';$('status').textContent='Perhitungan berhasil. Probabilitas Top Event dihitung dari struktur gerbang yang dipilih dengan asumsi independensi basic events.';
+}
+function resetModel(){
+ const d={topName:'Cedera operator akibat hydraulic press',rootGate:'OR',aName:'Kegagalan sistem deteksi',aGate:'OR',a1Name:'Light curtain gagal',a1P:.02,a2Name:'Sensor posisi gagal',a2P:.03,bName:'Kegagalan penghentian mesin',bGate:'AND',b1Name:'Safety interlock gagal',b1P:.01,b2Name:'Respons operator gagal',b2P:.2};
+ Object.entries(d).forEach(([k,v])=>$(k).value=v);calculate();
+}
+ids.forEach(id=>$(id).addEventListener('input',calculate));
+ids.forEach(id=>$(id).addEventListener('change',calculate));
+calculate();
+</script>
+</body>
+</html>
